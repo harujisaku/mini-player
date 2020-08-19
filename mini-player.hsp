@@ -1,14 +1,17 @@
 onexit *owari
 onerror *er
     screen 0,260,110
-	title "mini-player 1.0"
-    cls 2
+    title "mini-player 1.0"
+    
+    color $03,$a1,$fc
+    boxf
 
-    objsize 80, 20
-    pos 10,10:button "OPEN",*psh_open
-    pos 90,10:button "PLAY",*psh_play
-    pos 170,10:button "STOP",*psh_stop
-
+    objsize 76, 20
+    pos 5,10:button "OPEN",*psh_open
+    pos 81,10:button "PLAY",*psh_play
+    pos 157,10:button "STOP",*psh_stop
+    objsize 20,20
+    pos 233,10:button gosub "0",*flg_repeat
 
     mci "set HSP time format milliseconds"
 
@@ -40,7 +43,7 @@ onerror *er
 	bai=1.0*mci_length/24
    if wpeek(id3_data,0)!0x4154 : goto *psh_play
 
-    color 0,$FF,$88
+    color $03,$66,$fc
 
     getstr id3_title,id3_data,0x03
     pos 20,45
@@ -55,40 +58,19 @@ onerror *er
 	mci "status HSP mode"
 	if refstr="stopped" | refstr="paused" : mci "play HSP" :objprm 1,"PAUSE": else : mci "stop HSP" : objprm 1,"PLAY"
     repeat
-    	pget 0,0
-    	boxf
-    	color 0,0,0
-    	boxf 10,40,250,100
-    	color 255,255,255
-    	boxf 10,90,250,95
-    	color 0,$FF,$88
-        mci "status HSP position"
-        posi=stat
-        boxf (1.0*posi)/(mci_length)*240+5,88,(1.0*posi)/(mci_length)*240+10,97
-        title filename+" -"+strf("%02d",posi/1000/60)+":"+strf("%02d",posi/1000\60)
+    	gosub *draw
     	pos 20,45
     	mes filename
         await 100
-        if mci_length <= posi : goto *psh_stop : break
+        if mci_length <= posi&&repeat_flg=0 : goto *psh_stop : break
+        if mci_length <= posi&&repeat_flg=1 : mci "seek HSP to 0" : mci "play HSP"
     loop
 
 *psh_stop
     mci "stop HSP"
     mci "seek HSP to 0"
     objprm 1,"PLAY"
-    pget 0,0
-    	boxf
-    	color 0,0,0
-    	boxf 10,40,250,100
-    	color 255,255,255
-    	boxf 10,90,250,95
-    	pos 20,45
-    	color 0,$FF,$88
-    	mes filename
-        mci "status HSP position"
-        posi=stat
-        boxf (1.0*posi)/(mci_length)*240+10,88,(1.0*posi)/(mci_length)*240+15,97
-        title filename+" -"+strf("%02d",posi/1000/60)+":"+strf("%02d",posi/1000\60)
+    gosub *draw
     stop
 
 *owari
@@ -97,5 +79,23 @@ onerror *er
 
 *er
     logmes "error "+err
-    if err=19 : pos 20,45 : mes "蜀咲函縺吶ｋ繝輔ぃ繧､繝ｫ繧帝∈謚槭＠縺ｦ縺上□縺輔＞"
+    if err=19 : pos 20,45 : mes "再生するファイルを選択してください"
     stop
+
+*draw
+    pget 0,0
+    boxf
+    color 0,0,0
+    boxf 10,40,250,100
+    color 255,255,255
+    boxf 10,75,250,80
+    color $03,$66,$fc
+    mci "status HSP position"
+    posi=stat
+    boxf (1.0*posi)/(mci_length)*230+5,73,(1.0*posi)/(mci_length)*230+10,83
+    title filename+" - "+strf("%02d",posi/1000/60)+":"+strf("%02d",posi/1000\60)
+return
+
+*flg_repeat
+    if repeat_flg=0:repeat_flg=1:objprm 3,"1":else:repeat_flg=0:objprm 3,"0"
+return
