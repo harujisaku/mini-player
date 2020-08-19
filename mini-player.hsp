@@ -97,5 +97,5 @@ onerror *er
 
 *er
     logmes "error "+err
-    if err=19 : pos 20,45 : mes "再生するファイルを選択してください"
+    if err=19 : pos 20,45 : mes "蜀咲函縺吶ｋ繝輔ぃ繧､繝ｫ繧帝∈謚槭＠縺ｦ縺上□縺輔＞"
     stop
