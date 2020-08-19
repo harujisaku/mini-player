@@ -1,4 +1,4 @@
-#packopt name "mini-player 1.0"
+#packopt name "mini-player"
 onexit *owari
 onerror *er
 onclick gosub *seek
