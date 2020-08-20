@@ -1,6 +1,6 @@
 #packopt name "mini-player"
 onexit gosub *owari
-; onerror *er
+onerror *er
 onclick gosub *seek
 onkey gosub *key_check
 
@@ -8,7 +8,7 @@ version={"
     バージョン情報
 mini-player
 version 1.1
-HotSoupProcesser ver 3.5で製作
+HotSoupProcesser ver 3.5.1で製作
 "}
 
 help={"
@@ -17,7 +17,11 @@ help={"
     PLAY/PAUSEで再生、一時停止
     STOPで再生終了
     0/1で一回のみ再生、リピート
+    右クリック/shift押しながらOPENでバージョン情報
+    右クリック/shift押しながらPLAY/PAUSEでヘルプ
+    右クリック/shift押しながらSTOPで設定
 "}
+
 mci_length=1
 posi=1
 main_c_r=$03
@@ -49,9 +53,7 @@ endFlg=0
     line 95,9,95,0
     line 95,9,90,19
     line 76,19,90,19
-    ; buffer 2
     pos 0
-    ; picload "シークバー.png",2
     screen 0,260,110
     title "mini-player 1.1"
     
@@ -80,7 +82,6 @@ endFlg=0
             objprm 0,"OPEN"
             mci "status HSP mode"
             if refstr="stopped" | refstr="paused":objprm 1,"PLAY": else : objprm 1,"PAUSE"
-            ; objprm 1,"PLAY"
         }
         if endFlg=1{
             if wparam=0{
@@ -164,7 +165,6 @@ return
     getkey key_shift,16
     getkey key,2
     if key_shift=1|key=1{
-        ; dialog "設定画面を開きます。",0,"確認"
         screen 2,200,200
         gosub *settei_button
         gsel 0
@@ -178,8 +178,6 @@ return
 
 *owari
     endFlg=1
-    ; assert
-    
 return
 
 *er
@@ -217,9 +215,6 @@ return
 return
 
 *seek
-    ; logmes seek2
-    ; logmes posi
-    ; logmes mci_length
     repeat
         getkey key,1
         mci "status HSP position"
