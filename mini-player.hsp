@@ -1,4 +1,6 @@
 #packopt name "mini-player"
+//#packopt icon "icon.ico"
+
 onexit gosub *owari
 onerror *er
 onclick gosub *seek
