@@ -94,7 +94,7 @@ wait 10
         mes id3_artist
         
     }
-     return       
+return       
 *psh_play
     getkey key_shift,16
     if key_shift=1{
@@ -103,6 +103,11 @@ wait 10
 	    mci "status HSP mode"
 	    if refstr="stopped" | refstr="paused" : mci "play HSP" :objprm 1,"PAUSE": else : mci "stop HSP" : objprm 1,"PLAY"
         repeat
+            getkey key_shift,16
+        if key_shift=0{
+            objprm 0,"OPEN"
+            objprm 1,"PLAY"
+        }
         	gosub *draw
         	pos 20,45
         	mes filename
