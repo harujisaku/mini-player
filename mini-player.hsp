@@ -202,6 +202,8 @@ stop
     pos (1.0*posi)/(mci_length)*230+10,88
     ; celput 2,0
     title filename+" - "+strf("%02d",posi/1000/60)+":"+strf("%02d",posi/1000\60)
+    pos 20,45
+    mes filename
     pos 115,80
     mes strf("%02d",posi/1000/60)+":"+strf("%02d",posi/1000\60)
     }else{
