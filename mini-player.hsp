@@ -1,5 +1,5 @@
 #packopt name "mini-player"
-//#packopt icon "icon.ico"
+#packopt icon "icon.ico"
 
 onexit gosub *owari
 onerror *er
