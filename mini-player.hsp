@@ -7,311 +7,381 @@ onclick gosub *seek
 onkey gosub *key_check
 
 version={"
-    バージョン情報
+	バージョン情報
 mini-player
 version 1.1
 HotSoupProcesser ver 3.5.1で製作
 "}
 
 help={"
-    ヘルプ
-    OPENで再生するファイルを開く
-    PLAY/PAUSEで再生、一時停止
-    STOPで再生終了
-    0/1で一回のみ再生、リピート
-    右クリック/shift押しながらOPENでバージョン情報
-    右クリック/shift押しながらPLAY/PAUSEでヘルプ
-    右クリック/shift押しながらSTOPで設定
+	ヘルプ
+	OPENで再生するファイルを開く
+	PLAY/PAUSEで再生、一時停止
+	STOPで再生終了
+	0/1で一回のみ再生、リピート
+	右クリック/shift押しながらOPENでバージョン情報
+	右クリック/shift押しながらPLAY/PAUSEでヘルプ
+	右クリック/shift押しながらSTOPで設定
 "}
 
 mci_length=1
 posi=1
-main_c_r=$03
-main_c_g=$a1
-main_c_b=$fc
-sub_c_r=$00
-sub_c_g=$00
-sub_c_b=$00
-moji_c_r=$03
-moji_c_g=$66
-moji_c_b=$fc
-seek_c_r=$ff
-seek_c_g=$ff
-seek_c_b=$ff
+gosub *load
 endFlg=0
-    buffer 1
-    color main_c_r,main_c_g,main_c_b
-    boxf
-    color sub_c_r,sub_c_g,sub_c_b
-    line 6,0,0,9
-    line 0,9,0,19
-    line 75,0,75,9
-    line 75,9,70,19
-    line 6,0,75,0
-    line 0,19,70,19
-    line 82,0,76,9
-    line 76,9,76,19
-    line 82,0,95,0
-    line 95,9,95,0
-    line 95,9,90,19
-    line 76,19,90,19
-    pos 0
-    screen 0,260,110
-    title "mini-player 1.1"
-    
-    color main_c_r,main_c_g,main_c_b
-    boxf
+	buffer 1
+	color main_c_r,main_c_g,main_c_b
+	boxf
+	color sub_c_r,sub_c_g,sub_c_b
+	line 6,0,0,9
+	line 0,9,0,19
+	line 75,0,75,9
+	line 75,9,70,19
+	line 6,0,75,0
+	line 0,19,70,19
+	line 82,0,76,9
+	line 76,9,76,19
+	line 82,0,95,0
+	line 95,9,95,0
+	line 95,9,90,19
+	line 76,19,90,19
+	pos 0
+	screen 0,260,110
+	title "mini-player 1.1"
+	
+	color main_c_r,main_c_g,main_c_b
+	boxf
 
-    objsize 76, 20
-    objimage 1,0,0
-    pos 5,10:button gosub "OPEN",*psh_open
-    pos 81,10:button gosub "PLAY",*psh_play
-    pos 157,10:button gosub "STOP",*psh_stop
-    objsize 20,20
-    objimage 1,76,0
-    pos 233,10:button gosub "1",*flg_repeat
+	objsize 76, 20
+	objimage 1,0,0
+	pos 5,10:button gosub "OPEN",*psh_open
+	pos 81,10:button gosub "PLAY",*psh_play
+	pos 157,10:button gosub "STOP",*psh_stop
+	objsize 20,20
+	objimage 1,76,0
+	pos 233,10:button gosub "1",*flg_repeat
 
-    mci "set HSP time format milliseconds"
+	mci "set HSP time format milliseconds"
 
-    color sub_c_r,sub_c_g,sub_c_b
-    boxf 10,40,250,100
+	color sub_c_r,sub_c_g,sub_c_b
+	boxf 10,40,250,100
 
     font "MS UI Gothic",11,1
-*main
-    repeat
-        getkey key_shift,16
-        if key_shift=0{
-            objprm 0,"OPEN"
-            mci "status HSP mode"
-            if refstr="stopped" | refstr="paused":objprm 1,"PLAY": else : objprm 1,"PAUSE"
-        }
-        if endFlg=1{
-            if wparam=0{
-        wait 100
-        mci "close HSP"
-        end
-    }else{
-        gsel wparam,-1
-        gsel 0
-        }
+    if file!=""{
+        mci "open \""+file+"\" alias HSP"
+		filename=getpath(file,8)
+		exist file
+		sdim id3_data,0x80
+		bload file, id3_data,,strsize-0x80
+		
+		color sub_c_r,sub_c_g,sub_c_b
+		boxf 10,40,250,80
+		mci "status HSP length"
+		mci_length=stat
+		bai=1.0*mci_length/24
+		if wpeek(id3_data,0)!0x4154 : goto *psh_play
+		
+		color moji_c_r,moji_c_g,moji_c_b
+		
+		getstr id3_title,id3_data,0x03
+		pos 20,45
+		mes id3_title
+		
+		getstr id3_artist,id3_data,0x21
+		pos 20,65
+		mes id3_artist
+		
     }
+*main
+	repeat
+		getkey key_shift,16
+		if key_shift=0{
+			objprm 0,"OPEN"
+			mci "status HSP mode"
+			if refstr="stopped" | refstr="paused":objprm 1,"PLAY": else : objprm 1,"PAUSE"
+		}
+		if endFlg=1{
+			if wparam=0{
+		wait 100
+        mci "close HSP"
+        gosub *save
+		end
+        }else{
+            gsel wparam,-1
+            gsel 0
+            gosub *save
+            endFlg=0
+		}
+	}
 wait 100
 gosub *draw
-    loop
+	loop
 end
 *psh_open
-    getkey key_shift,16
-    getkey key,2
-    if key_shift=1|key=1{
-        dialog version,0,"バージョン情報"
-    }else{
-        mci "status HSP mode"
-        logmes refstr
-        if refstr!="" : mci "close HSP"
-        dialog "mp3",16,"MP3"
-        if stat=0:goto *main
-        file=refstr
-        
-        mci "open \""+refstr+"\" alias HSP"
-        filename=getpath(file,8)
-        exist file
-        sdim id3_data,0x80
-        bload file, id3_data,,strsize-0x80
-        
-        color sub_c_r,sub_c_g,sub_c_b
-        boxf 10,40,250,80
-        mci "status HSP length"
-        mci_length=stat
-        bai=1.0*mci_length/24
-        if wpeek(id3_data,0)!0x4154 : goto *psh_play
-        
-        color moji_c_r,moji_c_g,moji_c_b
-        
-        getstr id3_title,id3_data,0x03
-        pos 20,45
-        mes id3_title
-        
-        getstr id3_artist,id3_data,0x21
-        pos 20,65
-        mes id3_artist
-        
-    }
-return       
+	getkey key_shift,16
+	getkey key,2
+	if key_shift=1|key=1{
+		dialog version,0,"バージョン情報"
+	}else{
+		mci "status HSP mode"
+		logmes refstr
+		if refstr!="" : mci "close HSP"
+		dialog "mp3",16,"MP3"
+		if stat=0:goto *main
+		file=refstr
+		
+		mci "open \""+refstr+"\" alias HSP"
+		filename=getpath(file,8)
+		exist file
+		sdim id3_data,0x80
+		bload file, id3_data,,strsize-0x80
+		
+		color sub_c_r,sub_c_g,sub_c_b
+		boxf 10,40,250,80
+		mci "status HSP length"
+		mci_length=stat
+		bai=1.0*mci_length/24
+		if wpeek(id3_data,0)!0x4154 : goto *psh_play
+		
+		color moji_c_r,moji_c_g,moji_c_b
+		
+		getstr id3_title,id3_data,0x03
+		pos 20,45
+		mes id3_title
+		
+		getstr id3_artist,id3_data,0x21
+		pos 20,65
+		mes id3_artist
+		
+	}
+return	
 *psh_play
-    getkey key_shift,16
-    getkey key,2
-    if key_shift=1|key=1{
-        dialog help,0,"help"
-        }else{
-            mci "status HSP mode"
-            if refstr="stopped" | refstr="paused" :objprm 1,"PLAY":mci "play HSP": else : objprm 1,"PAUSE":mci "pause HSP"
-            repeat
-                getkey key_shift,16
-                if key_shift=0{
-                    objprm 0,"OPEN"
-                    mci "status HSP mode"
-                    if refstr="stopped" | refstr="paused" :objprm 1,"PLAY": else: objprm 1,"PAUSE"
-                    
-        }
-        	gosub *draw
-        	pos 20,45
-        	mes filename
-            await 100
-            if mci_length <= posi&&repeat_flg=1 : goto *psh_stop : break
-            if mci_length <= posi&&repeat_flg=0 : mci "seek HSP to 0" : mci "play HSP"
-            if endFlg=1 : goto *main
-        loop
-    }
+	getkey key_shift,16
+	getkey key,2
+	if key_shift=1|key=1{
+		dialog help,0,"help"
+		}else{
+			mci "status HSP mode"
+			if refstr="stopped" | refstr="paused" :objprm 1,"PLAY":mci "play HSP": else : objprm 1,"PAUSE":mci "pause HSP"
+			repeat
+	getkey key_shift,16
+	if key_shift=0{
+		objprm 0,"OPEN"
+		mci "status HSP mode"
+		if refstr="stopped" | refstr="paused" :objprm 1,"PLAY": else: objprm 1,"PAUSE"
+		
+		}
+			gosub *draw
+			pos 20,45
+			mes filename
+			await 100
+			if mci_length <= posi&&repeat_flg=1 : goto *psh_stop : break
+			if mci_length <= posi&&repeat_flg=0 : mci "seek HSP to 0" : mci "play HSP"
+			if endFlg=1 : goto *main
+		loop
+	}
 return
 *psh_stop
-    getkey key_shift,16
-    getkey key,2
-    if key_shift=1|key=1{
-        screen 2,200,200
-        gosub *settei_button
-        gsel 0
-        }else{
-            mci "stop HSP"
-            mci "seek HSP to 0"
-            objprm 1,"PLAY"
-            gosub *draw
-    }
+	getkey key_shift,16
+	getkey key,2
+	if key_shift=1|key=1{
+		screen 2,200,200
+		gosub *settei_button
+		gsel 0
+		}else{
+			mci "stop HSP"
+			mci "seek HSP to 0"
+			objprm 1,"PLAY"
+			gosub *draw
+	}
 return
 
 *owari
     endFlg=1
+    logmes save_file
 return
 
 *er
-    logmes "error "+err
-    if err=19 : pos 20,45 : mes "再生するファイルを選択してください"
+	logmes "error "+err
+	if err=19 : pos 20,45 : mes "再生するファイルを選択してください"
 stop
 
 *draw
-    color main_c_r,main_c_g,main_c_b
-    boxf
-    color sub_c_r,sub_c_g,sub_c_b
-    boxf 10,40,250,100
-    color seek_c_r,seek_c_g,seek_c_b
-    boxf 10,91,250,94
-    color moji_c_r,moji_c_g,moji_c_b
-    mci "status HSP position"
-    posi=stat
-    if posi>0{
-    boxf (1.0*posi)/(mci_length)*230+10,88,(1.0*posi)/(mci_length)*230+15,98
-    pos (1.0*posi)/(mci_length)*230+10,88
-    ; celput 2,0
-    title filename+" - "+strf("%02d",posi/1000/60)+":"+strf("%02d",posi/1000\60)
-    pos 20,45
-    mes filename
-    pos 115,80
-    mes strf("%02d",posi/1000/60)+":"+strf("%02d",posi/1000\60)
-    }else{
-        pos 115,80
-    filename= "再生するファイルを選択してください"
-    }
+	color main_c_r,main_c_g,main_c_b
+	boxf
+	color sub_c_r,sub_c_g,sub_c_b
+	boxf 10,40,250,100
+	color seek_c_r,seek_c_g,seek_c_b
+	boxf 10,91,250,94
+	color moji_c_r,moji_c_g,moji_c_b
+	mci "status HSP position"
+	posi=stat
+	if posi>0{
+	boxf (1.0*posi)/(mci_length)*230+10,88,(1.0*posi)/(mci_length)*230+15,98
+	pos (1.0*posi)/(mci_length)*230+10,88
+	; celput 2,0
+	title filename+" - "+strf("%02d",posi/1000/60)+":"+strf("%02d",posi/1000\60)
+	pos 20,45
+	mes filename
+	pos 115,80
+	mes strf("%02d",posi/1000/60)+":"+strf("%02d",posi/1000\60)
+	}else{
+		pos 115,80
+	filename= "再生するファイルを選択してください"
+	}
 return
 
 *flg_repeat
-    if repeat_flg=0:repeat_flg=1:objprm 3,"0":else:repeat_flg=0:objprm 3,"1"
+	if repeat_flg=0:repeat_flg=1:objprm 3,"0":else:repeat_flg=0:objprm 3,"1"
 return
 
 *seek
-    repeat
-        getkey key,1
-        mci "status HSP position"
-        posi=stat
-        ; logmes posi
-        if key = 1{
-            if mousex>=(1.0*posi)/(mci_length)*230+10&mousey>=88&mousex<=(1.0*posi)/(mci_length)*230+15&mousey<=98&cnt=0{
-                a=1
-            }if a>=1{    
-                seek2=1*(((1.0*mousex-10)/230)*mci_length)
-                logmes seek2
-                a=2
-            }else{
-                break
-            }
-        }if a=2&key=0{
-            mci "play HSP from "+seek2
-            a=0
-            break
-        }else{
-            ; break
-        }
-        wait 10
-    loop
+	repeat
+		getkey key,1
+		mci "status HSP position"
+		posi=stat
+		; logmes posi
+		if key = 1{
+			if mousex>=(1.0*posi)/(mci_length)*230+10&mousey>=88&mousex<=(1.0*posi)/(mci_length)*230+15&mousey<=98&cnt=0{
+	a=1
+			}if a>=1{	
+	seek2=1*(((1.0*mousex-10)/230)*mci_length)
+	logmes seek2
+	a=2
+			}else{
+	break
+			}
+		}if a=2&key=0{
+			mci "play HSP from "+seek2
+			a=0
+			break
+		}else{
+			; break
+		}
+		wait 10
+	loop
 return
 
 *key_check
-    objprm 0,"VERSION" : objprm 1,"HELP"
+	objprm 0,"VERSION" : objprm 1,"HELP"
 return
 
 *settei_button
-    objsize 200,40
-    button gosub "メインの色を変更する",*change_main_color
-    button gosub "サブの色を変更する",*change_sub_color
-    button gosub "文字の色を変更する",*change_moji_color
-    button gosub "シークバーの色を変更する",*change_seek_color
-    button gosub "デフォルトに戻す",*change_default_color
+	objsize 200,40
+	button gosub "メインの色を変更する",*change_main_color
+	button gosub "サブの色を変更する",*change_sub_color
+	button gosub "文字の色を変更する",*change_moji_color
+	button gosub "シークバーの色を変更する",*change_seek_color
+	button gosub "デフォルトに戻す",*change_default_color
 return
 
 *change_main_color
-    dialog "",32
-    main_c_r=ginfo_r:main_c_g=ginfo_g:main_c_b=ginfo_b
-    gosub *draw
-    gosub *setcolor
+	dialog "",32
+	main_c_r=ginfo_r:main_c_g=ginfo_g:main_c_b=ginfo_b
+	gosub *draw
+	gosub *setcolor
 return
 *change_sub_color
-    dialog "",32
-    sub_c_r=ginfo_r:sub_c_g=ginfo_g:sub_c_b=ginfo_b
-    gosub *draw
-    gosub *setcolor
+	dialog "",32
+	sub_c_r=ginfo_r:sub_c_g=ginfo_g:sub_c_b=ginfo_b
+	gosub *draw
+	gosub *setcolor
 return
 *change_moji_color
-    dialog "",32
-    moji_c_r=ginfo_r:moji_c_g=ginfo_g:moji_c_b=ginfo_b
-    gosub *draw
-    gosub *setcolor
+	dialog "",32
+	moji_c_r=ginfo_r:moji_c_g=ginfo_g:moji_c_b=ginfo_b
+	gosub *draw
+	gosub *setcolor
 return
 *change_seek_color
-    dialog "",32
-    seek_c_r=ginfo_r:seek_c_g=ginfo_g:seek_c_b=ginfo_b
-    gosub *draw
-    gosub *setcolor
+	dialog "",32
+	seek_c_r=ginfo_r:seek_c_g=ginfo_g:seek_c_b=ginfo_b
+	gosub *draw
+	gosub *setcolor
 return
 *change_default_color
-    main_c_r=$03
-    main_c_g=$a1
-    main_c_b=$fc
-    sub_c_r=$00
-    sub_c_g=$00
-    sub_c_b=$00
-    moji_c_r=$03
-    moji_c_g=$66
-    moji_c_b=$fc
-    seek_c_r=$ff
-    seek_c_g=$ff
-    seek_c_b=$ff
-    gosub *draw
-    gosub *setcolor
+	main_c_r=$03
+	main_c_g=$a1
+	main_c_b=$fc
+	sub_c_r=$00
+	sub_c_g=$00
+	sub_c_b=$00
+	moji_c_r=$03
+	moji_c_g=$66
+	moji_c_b=$fc
+	seek_c_r=$ff
+	seek_c_g=$ff
+	seek_c_b=$ff
+	gosub *draw
+	gosub *setcolor
 return
 *setcolor
-    gsel 1
-    color main_c_r,main_c_g,main_c_b
-    boxf
-    color sub_c_r,sub_c_g,sub_c_b
-    line 6,0,0,9
-    line 0,9,0,19
-    line 75,0,75,9
-    line 75,9,70,19
-    line 6,0,75,0
-    line 0,19,70,19
-    line 82,0,76,9
-    line 76,9,76,19
-    line 82,0,95,0
-    line 95,9,95,0
-    line 95,9,90,19
-    line 76,19,90,19
-    gsel 0
+	gsel 1
+	color main_c_r,main_c_g,main_c_b
+	boxf
+	color sub_c_r,sub_c_g,sub_c_b
+	line 6,0,0,9
+	line 0,9,0,19
+	line 75,0,75,9
+	line 75,9,70,19
+	line 6,0,75,0
+	line 0,19,70,19
+	line 82,0,76,9
+	line 76,9,76,19
+	line 82,0,95,0
+	line 95,9,95,0
+	line 95,9,90,19
+	line 76,19,90,19
+	gsel 0
+return
+
+*save
+    noteadd str(main_c_r),0,1
+    noteadd str(main_c_g),1,1
+    noteadd str(main_c_b),2,1
+    noteadd str(sub_c_r),3,1
+    noteadd str(sub_c_g),4,1
+    noteadd str(sub_c_b),5,1
+    noteadd str(moji_c_r),6,1
+    noteadd str(moji_c_g),7,1
+    noteadd str(moji_c_b),8,1
+    noteadd str(seek_c_r),9,1
+    noteadd str(seek_c_g),10,1
+    noteadd str(seek_c_b),11,1
+    noteadd file,12,1
+    chdir dir
+    notesave "mini-player.set"
+return
+*load
+    dir=dir_cur
+    notesel save_file
+	exist "mini-player.set"
+	if strsize=-1{
+		main_c_r=$03
+		main_c_g=$a1
+		main_c_b=$fc
+		sub_c_r=$00
+		sub_c_g=$00
+		sub_c_b=$00
+		moji_c_r=$03
+		moji_c_g=$66
+		moji_c_b=$fc
+		seek_c_r=$ff
+		seek_c_g=$ff
+		seek_c_b=$ff
+	}else{
+        noteload "mini-player.set"
+        noteget mr,0:main_c_r=int(mr)
+        noteget mg,1:main_c_g=int(mg)
+        noteget mb,2:main_c_b=int(mb)
+        noteget ar,3:sub_c_r=int(ar)
+        noteget ag,4:sub_c_g=int(ag)
+        noteget ab,5:sub_c_b=int(ab)
+        noteget mor,6:moji_c_r=int(mor)
+        noteget mog,7:moji_c_g=int(mog)
+        noteget mob,8:moji_c_b=int(mob)
+        noteget ser,9:seek_c_r=int(ser)
+        noteget seg,10:seek_c_g=int(seg)
+        noteget seb,11:seek_c_b=int(seb)
+        noteget file,12
+    }
 return
